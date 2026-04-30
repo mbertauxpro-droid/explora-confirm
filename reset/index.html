@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Réinitialiser le mot de passe · Explora</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #FAF7F2;
+      color: #1A1A2E;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    .card {
+      max-width: 440px;
+      width: 100%;
+      background: #fff;
+      border: 1px solid rgba(232,69,10,.15);
+      border-radius: 16px;
+      padding: 40px 32px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.06);
+    }
+    .logo {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #E8450A;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    p.intro {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #1A1A2E;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #E5E5E5;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 16px;
+      font-family: inherit;
+      color: #1A1A2E;
+      background: #fff;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #E8450A;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #E8450A;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #C73C08;
+    }
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+    .msg {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .msg.error {
+      background: rgba(220,38,38,.08);
+      border: 1px solid rgba(220,38,38,.2);
+      color: #B91C1C;
+      display: block;
+    }
+    .msg.success {
+      background: rgba(5,150,105,.08);
+      border: 1px solid rgba(5,150,105,.2);
+      color: #047857;
+      display: block;
+    }
+    .footer-hint {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #eee;
+    }
+    .footer-hint strong {
+      color: #1A1A2E;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">EXPLORA</div>
+    <h1>Nouveau mot de passe</h1>
+    <p class="intro">Choisis un mot de passe que tu n'utilises pas ailleurs.</p>
+
+    <div id="msg" class="msg"></div>
+
+    <div id="form-container">
+      <label for="pwd">Mot de passe</label>
+      <input id="pwd" type="password" placeholder="Au moins 6 caractères" autocomplete="new-password" />
+
+      <label for="pwd2">Confirmer le mot de passe</label>
+      <input id="pwd2" type="password" placeholder="Le même mot de passe" autocomplete="new-password" />
+
+      <p class="hint">6 caractères minimum.</p>
+
+      <button id="submit">Mettre à jour</button>
+    </div>
+
+    <div id="success-container" style="display:none">
+      <p style="font-size:15px;color:#1A1A2E;margin-bottom:16px;text-align:center">Ton mot de passe a été mis à jour.</p>
+      <div class="footer-hint" style="border:none;padding:0;margin:0">
+        <strong>Prochaine étape :</strong> ouvre l'app Explora et connecte-toi avec ton nouveau mot de passe.
+      </div>
+    </div>
+
+    <div class="footer-hint" id="default-footer">
+      Tu n'as pas demandé de réinitialisation ? Ignore ce lien, ton mot de passe ne change pas.
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ À remplacer par tes vraies clés Supabase publiques
+    const SUPABASE_URL = 'https://qldhemncwcghgfftccxk.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_8QUywBg91lm7gmGmNlLcnQ_-6YAc0x1';
+
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const msgEl = document.getElementById('msg');
+    const submitBtn = document.getElementById('submit');
+    const formContainer = document.getElementById('form-container');
+    const successContainer = document.getElementById('success-container');
+    const defaultFooter = document.getElementById('default-footer');
+
+    function showMsg(text, type) {
+      msgEl.textContent = text;
+      msgEl.className = 'msg ' + type;
+    }
+
+    function hideMsg() {
+      msgEl.className = 'msg';
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      const pwd  = document.getElementById('pwd').value;
+      const pwd2 = document.getElementById('pwd2').value;
+
+      hideMsg();
+
+      if (!pwd || pwd.length < 6) {
+        showMsg('Le mot de passe doit faire au moins 6 caractères.', 'error');
+        return;
+      }
+      if (pwd !== pwd2) {
+        showMsg('Les deux mots de passe ne sont pas identiques.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Mise à jour...';
+
+      try {
+        const { error } = await sb.auth.updateUser({ password: pwd });
+        if (error) throw error;
+
+        formContainer.style.display = 'none';
+        defaultFooter.style.display = 'none';
+        successContainer.style.display = 'block';
+      } catch (err) {
+        showMsg(err.message || 'Une erreur est survenue. Réessaie plus tard.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Mettre à jour';
+      }
+    });
+  </script>
+</body>
+</html>
